@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Register - Appointment Booking System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            width: 380px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            text-align: center;
+        }
+        .role-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .role-btn {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+        }
+        .role-btn.active {
+            background: #f5576c;
+            color: white;
+            border-color: #f5576c;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 15px;
+            border: none;
+            border-radius: 8px;
+            background: #f5576c;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .secondary {
+            background: #4299e1;
+        }
+        .message {
+            display: none;
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+        }
+        .error {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+        .success {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+        .links {
+            text-align: center;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+<div class="container">
+    <h1>✨ Create Account</h1>
+
+    <div id="message" class="message"></div>
+
+    <div class="role-selector">
+        <div class="role-btn active" onclick="selectRole('customer', this)">👤 Customer</div>
+        <div class="role-btn" onclick="selectRole('provider', this)">👨‍⚕️ Provider</div>
+    </div>
+
+    <!-- ✅ FORM -->
+    <form id="registerForm">
+        <input id="name" placeholder="Full Name" required>
+        <input id="email" type="email" placeholder="Email" required>
+        <input id="password" type="password" placeholder="Password" required>
+        <input id="confirmPassword" type="password" placeholder="Confirm Password" required>
+
+        <!-- ✅ REAL SUBMIT BUTTON -->
+        <button type="submit">
+            ✨ Create Account
+        </button>
+    </form>
+
+    <button class="secondary" type="button" onclick="window.location.href='/login'">
+        Already have an account? Login
+    </button>
+
+    <div class="links">
+        <a href="/">Home Page</a>
+    </div>
+</div>
+
+<script>
+let selectedRole = "customer";
+
+function selectRole(role, el) {
+    selectedRole = role;
+    document.querySelectorAll(".role-btn").forEach(b => b.classList.remove("active"));
+    el.classList.add("active");
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    const form = document.getElementById("registerForm");
+
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const email = document.getElementById("email").value.trim();
+        const password = document.getElementById("password").value;
+        const confirmPassword = document.getElementById("confirmPassword").value;
+        const message = document.getElementById("message");
+
+        message.style.display = "none";
+
+        if (!email || !password || !confirmPassword) {
+            showError("All fields are required");
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            showError("Passwords do not match");
+            return;
+        }
+
+        if (password.length > 72) {
+            showError("Password too long (max 72 characters)");
+            return;
+        }
+
+        try {
+            const res = await fetch("/users/register", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    email: email,
+                    password: password,
+                    role: selectedRole
+                })
+            });
+
+            // ✅ SAFELY HANDLE NON-JSON ERRORS
+            const text = await res.text();
+            let data;
+            try {
+                data = JSON.parse(text);
+            } catch {
+                throw new Error("Server error (invalid response)");
+            }
+
+            if (!res.ok) {
+                throw new Error(data.detail || "Registration failed");
+            }
+
+            message.textContent = "✅ Account created! Redirecting to login...";
+            message.className = "message success";
+            message.style.display = "block";
+
+            setTimeout(() => {
+                window.location.href = "/login";
+            }, 1200);
+
+        } catch (err) {
+            showError(err.message);
+        }
+    });
+});
+
+function showError(msg) {
+    const m = document.getElementById("message");
+    m.textContent = "❌ " + msg;
+    m.className = "message error";
+    m.style.display = "block";
+}
+</script>
+
